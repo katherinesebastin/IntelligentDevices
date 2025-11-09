@@ -9,9 +9,10 @@ sudo systemctl start postgresql
 Access the PostgreSQL command line
 psql -U postgres
 
+Table names are case senstive that is everything is in lower case
 Create your project database and user
 -- Create database
-CREATE DATABASE school_project;
+CREATE DATABASE moodtracker;
 
 CREATE USER admin WITH PASSWORD 'password';
 
@@ -26,7 +27,7 @@ CREATE TABLE devices (
 );
 
 CREATE TABLE
-postgres=# CREATE TABLE PrototypeDevice (
+postgres=# CREATE TABLE prototypedevice (
     id BIGSERIAL PRIMARY KEY,
     entry_date DATE NOT NULL,
     mood SMALLINT NOT NULL
