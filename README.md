@@ -35,3 +35,6 @@ CREATE TABLE prototypedevice (
 ## In API folder terminal  
 Install the PostgreSQL driver  
 go get github.com/lib/pq  
+
+## Command to run main.go  
+go run main.go
