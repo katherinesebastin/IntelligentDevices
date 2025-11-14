@@ -38,3 +38,32 @@ go get github.com/lib/pq
 
 ## Command to run main.go  
 go run main.go
+
+## Golang Code 
+
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+
+	_ "github.com/lib/pq"
+)
+
+func main() {
+	connStr := "user=admin password=password dbname=moodtracker sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		log.Fatal("Cannot connect to database:", err)
+	}
+
+	fmt.Println("Connected to PostgreSQL successfully!")
+}
+
