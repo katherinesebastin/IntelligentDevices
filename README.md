@@ -85,3 +85,30 @@ func main() {
 	fmt.Println("Connected to PostgreSQL successfully!")
 }
 
+
+
+# modified database
+
+CREATE TABLE devices (
+    id SERIAL PRIMARY KEY,           -- numeric ID for JWT / foreign key
+    device_id VARCHAR(64) UNIQUE NOT NULL,  -- public device name like "device1"
+    password VARCHAR(255) NOT NULL,
+    reminder1 TIME DEFAULT NULL,
+    reminder2 TIME DEFAULT NULL,
+    reminder3 TIME DEFAULT NULL
+);
+
+
+CREATE TABLE prototypedevice (
+    id BIGSERIAL PRIMARY KEY,
+    device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    entry_date DATE NOT NULL,
+    mood SMALLINT NOT NULL
+);
+
+
+-- Replace <username> with the role your Go app uses
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE devices TO <username>;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE prototypedevice TO <username>;
+
+
