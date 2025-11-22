@@ -108,7 +108,7 @@ CREATE TABLE prototypedevice (
 
 
 -- Replace <username> with the role your Go app uses
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE devices TO <username>;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE prototypedevice TO <username>;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE devices TO admin;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE prototypedevice TO admin;
 
 
