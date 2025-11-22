@@ -32,6 +32,18 @@ CREATE TABLE prototypedevice (
     mood SMALLINT NOT NULL  
 );  
 
+## Quit database
+\q
+
+## List all databases
+\l 
+
+## Access moodtracker database
+psql -U admin -d moodtracker
+
+## List the relations in a database
+\dt
+
 ## In API folder terminal  
 Install the PostgreSQL driver  
 go get github.com/lib/pq  
