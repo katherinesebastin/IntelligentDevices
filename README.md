@@ -1,5 +1,11 @@
 # Useful Commands
 
+linux acces postgres console: 
+sudo -i -u postgres
+psql
+\c moodtracker
+
+
 ## Install PostgreSQL locally
 Linux (Ubuntu/Debian):    
 sudo apt update  
