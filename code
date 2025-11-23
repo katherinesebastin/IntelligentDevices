@@ -1,0 +1,194 @@
+## main.go
+package main
+
+import (
+	"context"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"goapi/internal/api/repository"
+	"goapi/internal/api/server"
+	"goapi/internal/api/service"
+)
+
+func NewSimpleLogger(logFile string) *log.Logger {
+	file, _ := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	return log.New(io.MultiWriter(file, os.Stdout), "", log.Ldate|log.Ltime|log.Lshortfile)
+}
+
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logger := NewSimpleLogger("production.log")
+
+	db, err := repository.NewPostgres("postgres://admin:password@localhost:5432/moodtracker")
+	if err != nil {
+		logger.Println("DB error:", err)
+		return
+	}
+	// <-- ADD THIS BLOCK
+	var dbName string
+	err = db.QueryRow(context.Background(), "SELECT current_database()").Scan(&dbName)
+	if err != nil {
+		logger.Println("DB name error:", err)
+	} else {
+		logger.Println("Connected to DB:", dbName)
+	}
+	// <-- END OF BLOCK
+	defer db.Close()
+
+	moodRepo := repository.NewMoodRepository(db)
+	moodService := service.NewMoodService(moodRepo)
+
+	mux := http.NewServeMux()
+	handler := server.NewArduinoHandler(moodService)
+	mux.HandleFunc("/addMood", handler.HandleMood)
+
+	srv := server.NewServer(ctx, mux, logger)
+	gracefulShutdown(srv, cancel, logger)
+
+	logger.Println("Server starting on :8080...")
+	if err := srv.ListenAndServe(":8080"); err != http.ErrServerClosed {
+		logger.Println("Server error:", err)
+	}
+}
+
+func gracefulShutdown(s *server.Server, cancel context.CancelFunc, logger *log.Logger) {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-ch
+		cancel()
+		s.Shutdown()
+		logger.Println("Graceful shutdown done.")
+	}()
+}
+
+## repository/moodRepository.go
+package repository
+
+import (
+	"context"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+type MoodRepository struct {
+	DB *pgxpool.Pool
+}
+
+func NewMoodRepository(db *pgxpool.Pool) *MoodRepository {
+	return &MoodRepository{DB: db}
+}
+
+func (r *MoodRepository) InsertMood(ctx context.Context, mood int) error {
+	_, err := r.DB.Exec(ctx,
+		"INSERT INTO prototypedevice (entry_date, mood) VALUES (CURRENT_DATE, $1)",
+		mood,
+	)
+	if err != nil {
+		println("DB ERROR:", err.Error()) // <-- ADD THIS LINE
+	}
+	return err
+}
+
+## server/ handlers.go
+package server
+
+import (
+	"encoding/json"
+	"goapi/internal/api/service"
+	"net/http"
+)
+
+type ArduinoHandler struct {
+	MoodService *service.MoodService
+}
+
+func NewArduinoHandler(ms *service.MoodService) *ArduinoHandler {
+	return &ArduinoHandler{MoodService: ms}
+}
+
+func (h *ArduinoHandler) HandleMood(w http.ResponseWriter, r *http.Request) {
+	type MoodRequest struct {
+		Mood int `json:"mood"`
+	}
+
+	var req MoodRequest
+	json.NewDecoder(r.Body).Decode(&req)
+
+	if req.Mood < 1 || req.Mood > 3 {
+		http.Error(w, "invalid mood", http.StatusBadRequest)
+		return
+	}
+
+	err := h.MoodService.SaveMood(r.Context(), req.Mood)
+	if err != nil {
+		http.Error(w, "database error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
+
+## server/server.go
+package server
+
+import (
+	"context"
+	"log"
+	"net/http"
+)
+
+type Server struct {
+	httpServer *http.Server
+	Logger     *log.Logger
+}
+
+func NewServer(ctx context.Context, mux *http.ServeMux, logger *log.Logger) *Server {
+	s := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
+	return &Server{
+		httpServer: s,
+		Logger:     logger,
+	}
+}
+
+func (s *Server) ListenAndServe(addr string) error {
+	return s.httpServer.ListenAndServe()
+}
+
+func (s *Server) Shutdown() error {
+	return s.httpServer.Close()
+}
+
+## service/moodService.go
+package service
+
+import (
+	"context"
+	"goapi/internal/api/repository"
+)
+
+type MoodService struct {
+	Repo *repository.MoodRepository
+}
+
+func NewMoodService(repo *repository.MoodRepository) *MoodService {
+	return &MoodService{Repo: repo}
+}
+
+func (s *MoodService) SaveMood(ctx context.Context, mood int) error {
+	return s.Repo.InsertMood(ctx, mood)
+}
+ 
