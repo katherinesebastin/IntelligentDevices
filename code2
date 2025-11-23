@@ -1,0 +1,18 @@
+package service
+
+import (
+	"context"
+	"backend/repository"
+)
+
+type MoodService struct {
+	Repo *repository.MoodRepository
+}
+
+func NewMoodService(repo *repository.MoodRepository) *MoodService {
+	return &MoodService{Repo: repo}
+}
+
+func (s *MoodService) SaveMood(ctx context.Context, mood int, deviceID int) error {
+	return s.Repo.InsertMood(ctx, mood, deviceID)
+}
