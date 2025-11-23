@@ -111,4 +111,8 @@ CREATE TABLE prototypedevice (
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE devices TO admin;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE prototypedevice TO admin;
 
+-- Replace 'admin' with your DB user if different
+GRANT USAGE, SELECT, UPDATE ON SEQUENCE prototypedevice_id_seq TO admin;
+
+
 
