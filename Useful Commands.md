@@ -11,8 +11,17 @@ sudo -i -u postgres
 psql  
 \c moodtracker 
 
-## Access the PostgreSQL command line
+## Access the PostgreSQL command line (Mac)
 psql -U postgres  
+\c moodtracker  
+
+SELECT * FROM devices  
+
+SELECT * FROM prototypedevice  
+
+curl -X POST http://localhost:8080/addMood \  
+-H "Content-Type: application/json" \  
+-d '{"device_id":1,"mood":3}'  
 
 ## Create project database and user
 Table names are case senstive, everything is in lower case  
@@ -50,9 +59,6 @@ GRANT USAGE, SELECT, UPDATE ON SEQUENCE prototypedevice_id_seq TO admin;
 
 ## List all databases
 \l 
-
-## Access moodtracker database
-psql -U admin -d moodtracker
 
 ## List the relations in a database
 \dt
