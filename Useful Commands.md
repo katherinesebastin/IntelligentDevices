@@ -20,6 +20,14 @@ END $$;
 
 # Useful Commands 
 
+## Run
+
+## Frontend
+npx serve .  
+
+## Backend
+go run main.go  
+
 ## Install PostgreSQL locally
 Linux (Ubuntu/Debian):    
 sudo apt update  
