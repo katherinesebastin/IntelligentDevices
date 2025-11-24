@@ -1,3 +1,23 @@
+DO $$
+DECLARE
+    start_date DATE := current_date - INTERVAL '29 days';
+    d DATE;
+    i INT;
+    dev_id INT;
+BEGIN
+    SELECT id INTO dev_id FROM devices WHERE device_id = 'device1';
+
+    FOR i IN 0..29 LOOP
+        d := start_date + i;
+        INSERT INTO prototypedevice (device_id, entry_date, mood) VALUES
+            (dev_id, d, (FLOOR(random() * 3 + 1))::SMALLINT),
+            (dev_id, d, (FLOOR(random() * 3 + 1))::SMALLINT),
+            (dev_id, d, (FLOOR(random() * 3 + 1))::SMALLINT);
+    END LOOP;
+END $$;
+
+
+
 # Useful Commands 
 
 ## Install PostgreSQL locally
