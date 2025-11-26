@@ -80,7 +80,11 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE devices TO admin;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE prototypedevice TO admin;  
 
 -- Replace 'admin' with your DB user if different  
-GRANT USAGE, SELECT, UPDATE ON SEQUENCE prototypedevice_id_seq TO admin;    
+GRANT USAGE, SELECT, UPDATE ON SEQUENCE prototypedevice_id_seq TO admin;   
+
+## Alter Table
+ALTER TABLE devices ADD COLUMN last_triggered DATE DEFAULT NULL;
+
 
 ## Quit database
 \q
