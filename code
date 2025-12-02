@@ -1,3 +1,164 @@
+Updated Arduino Code 
+
+#include <WiFiNINA.h>
+#include <ArduinoHttpClient.h>
+#include <ArduinoJson.h>
+
+const char* ssid = "KatherineiPhone";
+const char* password = "Katherine@123";
+
+const char* server = "172.20.10.2";
+const int port = 8080;
+
+const int pinButtonA = 8;
+const int pinButtonB = 9;
+const int pinButtonC = 10;
+
+const int pinLedA = 12;
+const int pinLedB = 7;
+const int pinLedC = 6;
+
+const int pinBuzzer = 3;
+
+WiFiClient wifi;
+HttpClient client = HttpClient(wifi, server, port);
+
+// ----- Buzzer control -----
+bool buzzerActive = false;
+unsigned long buzzerEndTime = 0;
+int buzzerPinFreq = 0;
+
+void startBuzzer(int frequency, int duration) {
+  tone(pinBuzzer, frequency);
+  buzzerActive = true;
+  buzzerEndTime = millis() + duration;
+  buzzerPinFreq = frequency;
+}
+
+void updateBuzzer() {
+  if (buzzerActive && millis() >= buzzerEndTime) {
+    noTone(pinBuzzer);
+    buzzerActive = false;
+  }
+}
+
+// ----- Alert polling control -----
+unsigned long lastAlertCheck = 0;
+const unsigned long alertInterval = 60000;  // 60 seconds = 1 minute
+
+void checkAlerts() {
+  if (millis() - lastAlertCheck >= alertInterval) {
+    lastAlertCheck = millis();
+    
+    client.beginRequest();
+    client.get("/getAlerts");
+    client.endRequest();
+    
+    int status = client.responseStatusCode();
+    if (status == 200) {
+      String response = client.responseBody();
+      Serial.println("Alert data: " + response);
+
+      StaticJsonDocument<200> alertDoc;
+      DeserializationError error = deserializeJson(alertDoc, response);
+      if (!error) {
+        bool alert = alertDoc["alert"];
+        int freq = alertDoc["frequency"];
+        int dur = alertDoc["duration"];
+        if (alert) {
+          startBuzzer(freq, dur);
+        }
+      } else {
+        Serial.println("JSON parse error");
+      }
+    } else {
+      Serial.println("Failed to fetch alerts, status: " + String(status));
+    }
+  }
+}
+
+void sendMood(int mood, int ledPin) {
+  StaticJsonDocument<200> jsonDoc;
+  jsonDoc["device_id"] = 1;
+  jsonDoc["mood"] = mood;
+
+  String jsonData;
+  serializeJson(jsonDoc, jsonData);
+
+  Serial.print("Sending: ");
+  Serial.println(jsonData);
+
+  client.beginRequest();
+  client.post("/addMood");
+  client.sendHeader("Content-Type", "application/json");
+  client.sendHeader("Content-Length", jsonData.length());
+  client.endRequest();
+  client.print(jsonData);
+
+  int status = client.responseStatusCode();
+  String response = client.responseBody();
+
+  Serial.print("Status: ");
+  Serial.println(status);
+  Serial.print("Response: ");
+  Serial.println(response);
+
+  if (status == 200) {
+    digitalWrite(ledPin, HIGH);
+    delay(800);
+    digitalWrite(ledPin, LOW);
+  } else {
+    Serial.println("HTTP POST failed, LED not lit.");
+  }
+
+  delay(3000);
+}
+
+// ----- Setup -----
+void setup() {
+  Serial.begin(9600);
+  while (!Serial);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.println("Connecting...");
+  }
+  Serial.println("WiFi Connected!");
+
+  pinMode(pinButtonA, INPUT_PULLUP);
+  pinMode(pinButtonB, INPUT_PULLUP);
+  pinMode(pinButtonC, INPUT_PULLUP);
+
+  pinMode(pinLedA, OUTPUT);
+  pinMode(pinLedB, OUTPUT);
+  pinMode(pinLedC, OUTPUT);
+
+  pinMode(pinBuzzer, OUTPUT);
+}
+
+// ----- Main loop -----
+void loop() {
+  if (digitalRead(pinButtonA) == LOW) {
+    Serial.println("Mood 3");
+    sendMood(3, pinLedA);
+  }
+  else if (digitalRead(pinButtonB) == LOW) {
+    Serial.println("Mood 2");
+    sendMood(2, pinLedB);
+  }
+  else if (digitalRead(pinButtonC) == LOW) {
+    Serial.println("Mood 1");
+    sendMood(1, pinLedC);
+  }
+
+  updateBuzzer();
+
+  checkAlerts();
+}
+
+----
+
 ## main.go
 package main
 
