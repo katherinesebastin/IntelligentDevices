@@ -5,6 +5,11 @@
 ### Frontend  
 npx serve .  
 
+
+npx create-react-app frontend  
+cd frontend  
+npm start  
+
 ### Backend  
 go run main.go  
 
