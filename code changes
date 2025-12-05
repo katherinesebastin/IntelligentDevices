@@ -1,0 +1,77 @@
+ const fetchJSON = async (url) => {
+        try {
+            const res = await fetch(url, { headers: { "Authorization": "Bearer " + token } });
+            if (res.status === 401) {
+                window.location.href = "/login";
+                return null;
+            }
+            return res.json();
+        } catch (err) {
+            console.error("Fetch error:", err);
+            return null;
+        }
+    };
+
+    const moodLabel = (avg) => {
+        if (avg == null) return "No entries today";
+        const rounded = Math.round(avg);
+        return rounded === 1 ? "Bad" : rounded === 2 ? "Ok" : rounded === 3 ? "Good" : "No entries today";
+    };
+
+    useEffect(() => {
+    fetchJSON("http://localhost:8080/api/mood/today").then(data => {
+        
+        if (!data) {
+            setTodayMood("Backend unreachable");
+            return;
+        }
+
+        if (data.avg == null) {
+            setTodayMood("No entries today");
+            return;
+        }
+
+        setTodayMood(moodLabel(data.avg));
+    });
+
+
+
+
+
+
+
+
+// TodayHandler returns the average mood for today for the authenticated device
+func TodayHandler(w http.ResponseWriter, r *http.Request) {
+    deviceID := r.Context().Value(middleware.DeviceIDKey).(int)
+
+    today := time.Now().Format("2006-01-02")
+
+    var avg sql.NullFloat64
+    err := db.DB.QueryRow(
+        `SELECT AVG(mood)
+         FROM prototypedevice
+         WHERE entry_date = $1 AND device_id = $2`,
+        today, deviceID,
+    ).Scan(&avg)
+
+    if err != nil && err != sql.ErrNoRows {
+        http.Error(w, "Error fetching data", http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+
+    // No entries today
+    if !avg.Valid {
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "avg": nil,
+        })
+        return
+    }
+
+    // Return valid average
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "avg": avg.Float64,
+    })
+}
