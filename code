@@ -49,9 +49,10 @@ const unsigned long alertInterval = 60000;  // 60 seconds = 1 minute
 void checkAlerts() {
   if (millis() - lastAlertCheck >= alertInterval) {
     lastAlertCheck = millis();
-    
+
+    String url = "/getAlerts?device_id=1";
     client.beginRequest();
-    client.get("/getAlerts");
+    client.get(url);
     client.endRequest();
     
     int status = client.responseStatusCode();
